@@ -20,7 +20,9 @@ __copyright__ = '2014, Pawel Jastrzebski <pawelj@vulturis.eu>'
 
 import os
 import sys
-import imghdr
+from imghdr import what
+from io import BytesIO
+from PIL import Image
 from uuid import uuid4
 from . import MobiProcessing
 
@@ -50,8 +52,8 @@ class MOBIFile:
                 ready_cover = self.get_cover_image()
             except:
                 raise OSError('Cover extraction failed!')
-            open(os.path.join(self.kindle.path, 'system', 'thumbnails', 'thumbnail_' + self.asin + '_EBOK_portrait.'
-                                                                        + ready_cover[0]), 'wb').write(ready_cover[1])
+            ready_cover.save(os.path.join(self.kindle.path, 'system', 'thumbnails', 'thumbnail_' + self.asin +
+                                                                                    '_EBOK_portrait.jpg'), 'JPEG')
         try:
             # noinspection PyArgumentList
             ready_file = MobiProcessing.DualMobiMetaFix(self.path, bytes(self.asin, 'UTF-8'))
@@ -72,7 +74,7 @@ class MOBIFile:
         end = section.num_sections
         for i in range(beg, end):
             data = section.load_section(i)
-            imgtype = imghdr.what(None, data)
+            imgtype = what(None, data)
             if imgtype is None and data[0:2] == b'\xFF\xD8':
                 last = len(data)
                 while data[last-1:last] == b'\x00':
@@ -80,4 +82,6 @@ class MOBIFile:
                 if data[last-2:last] == b'\xFF\xD9':
                     imgtype = "jpeg"
             if imgtype is not None:
-                return imgtype, data
+                cover = Image.open(BytesIO(data))
+                cover.thumbnail((1920, 330), Image.ANTIALIAS)
+                return cover
