@@ -19,7 +19,6 @@ __license__ = 'GPL-3'
 __copyright__ = '2014, Pawel Jastrzebski <pawelj@vulturis.eu>'
 
 import os
-import sys
 from imghdr import what
 from io import BytesIO
 from PIL import Image
@@ -28,11 +27,12 @@ from . import MobiProcessing
 
 
 class MOBIFile:
-    def __init__(self, path, kindle):
+    def __init__(self, path, kindle, progressbar):
         self.path = path
         self.check_file()
         self.kindle = kindle
         self.asin = str(uuid4())
+        self.progressbar = progressbar
 
     def check_file(self):
         if not os.path.isfile(self.path):
@@ -59,10 +59,17 @@ class MOBIFile:
             ready_file = MobiProcessing.DualMobiMetaFix(self.path, bytes(self.asin, 'UTF-8'))
         except:
             raise OSError('Failed to clean file!')
-        # noinspection PyArgumentList
-        if sys.getsizeof(ready_file.get_result()) < self.kindle.get_free_space():
-            open(os.path.join(self.kindle.path, 'documents',
-                              os.path.basename(self.path)), 'wb').write(ready_file.get_result())
+        ready_file, source_size = ready_file.get_result()
+        if source_size < self.kindle.get_free_space():
+            saved = 0
+            target = open(os.path.join(self.kindle.path, 'documents', os.path.basename(self.path)), 'wb')
+            while True:
+                chunk = ready_file.read(32768)
+                if not chunk:
+                    break
+                target.write(chunk)
+                saved += len(chunk)
+                self.progressbar['value'] = int((saved/source_size)*100)
         else:
             raise OSError('Not enough space on target device!')
 

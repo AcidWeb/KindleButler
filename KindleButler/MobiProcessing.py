@@ -28,7 +28,9 @@
 __license__ = 'GPL-3'
 __copyright__ = '2014, Pawel Jastrzebski <pawelj@vulturis.eu>'
 
+import sys
 import struct
+from io import BytesIO
 
 number_of_pdb_records = 76
 first_pdb_record = 78
@@ -314,4 +316,5 @@ class DualMobiMetaFix:
         self.datain = replacesection(self.datain, datain_kf8, rec0)
 
     def get_result(self):
-        return bytes(self.datain)
+        # noinspection PyArgumentList
+        return BytesIO(bytes(self.datain)), sys.getsizeof(bytes(self.datain))
