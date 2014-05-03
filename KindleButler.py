@@ -20,6 +20,7 @@ __license__ = 'GPL-3'
 __copyright__ = '2014, Pawel Jastrzebski <pawelj@vulturis.eu>'
 
 import os
+import sys
 import argparse
 from tkinter import Tk, ttk, filedialog
 from threading import Thread
@@ -33,7 +34,7 @@ class KindleButlerGUI:
 
     def draw_gui(self):
         main = Tk()
-        main.title('KindleButler')
+        main.title('KindleButler ' + __version__)
         main.resizable(0, 0)
         main.wm_attributes('-toolwindow', 1)
         x = (main.winfo_screenwidth() - main.winfo_reqwidth()) / 2
@@ -53,7 +54,7 @@ class KindleButlerGUI:
 
 
 class KindleButlerWorker:
-    def main_thread(self, input_file, cover, ui):
+    def __init__(self, input_file, cover, ui):
         try:
             kindle = Interface.Kindle()
             file = File.MOBIFile(input_file, kindle, ui.pbar)
@@ -65,6 +66,15 @@ class KindleButlerWorker:
 
 
 if __name__ == '__main__':
+    if getattr(sys, 'frozen', False):
+        class FakeSTD(object):
+            def write(self, string):
+                pass
+
+            def flush(self):
+                pass
+        sys.stdout = FakeSTD()
+        sys.stderr = FakeSTD()
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--cover', dest='custom_cover', action='store_true')
     parser.add_argument('input_file', type=str)
@@ -77,5 +87,5 @@ if __name__ == '__main__':
                 exit(0)
         else:
             cover_file = ''
-        Thread(target=KindleButlerWorker.main_thread, args=(None, args.input_file, cover_file, gui)).start()
+        Thread(target=KindleButlerWorker, args=(args.input_file, cover_file, gui)).start()
         gui.root.mainloop()

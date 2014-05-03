@@ -51,6 +51,7 @@ class MOBIFile:
             if cover != '':
                 try:
                     ready_cover = Image.open(cover)
+                    ready_cover = ready_cover.convert('L')
                 except:
                     raise OSError('Failed to load custom cover!')
             else:
@@ -97,4 +98,5 @@ class MOBIFile:
             if imgtype is not None:
                 cover = Image.open(BytesIO(data))
                 cover.thumbnail((1920, 330), Image.ANTIALIAS)
+                cover = cover.convert('L')
                 return cover
