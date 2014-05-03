@@ -19,8 +19,9 @@ __version__ = '0.1'
 __license__ = 'GPL-3'
 __copyright__ = '2014, Pawel Jastrzebski <pawelj@vulturis.eu>'
 
-import sys
-from tkinter import Tk, ttk
+import os
+import argparse
+from tkinter import Tk, ttk, filedialog
 from threading import Thread
 from KindleButler import Interface
 from KindleButler import File
@@ -45,13 +46,18 @@ class KindleButlerGUI:
         label = ttk.Label(style='BW.TLabel')
         return main, progressbar, label
 
+    def load_file(self, source):
+        fname = filedialog.askopenfilename(title='Select cover', initialdir=os.path.split(source)[0],
+                                           filetypes=(('Image files', '*.jpg;*.jpeg;*.png;*.gif'),))
+        return fname
+
 
 class KindleButlerWorker:
-    def main_thread(self, ui):
+    def main_thread(self, input_file, cover, ui):
         try:
             kindle = Interface.Kindle()
-            file = File.MOBIFile(sys.argv[1], kindle, ui.pbar)
-            file.save_file()
+            file = File.MOBIFile(input_file, kindle, ui.pbar)
+            file.save_file(cover)
             ui.root.quit()
         except OSError as e:
             ui.label.grid(row=1)
@@ -59,7 +65,17 @@ class KindleButlerWorker:
 
 
 if __name__ == '__main__':
-    if len(sys.argv) > 1:
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-c', '--cover', dest='custom_cover', action='store_true')
+    parser.add_argument('input_file', type=str)
+    args = parser.parse_args()
+    if args.input_file != '':
         gui = KindleButlerGUI()
-        Thread(target=KindleButlerWorker.main_thread, args=(None, gui)).start()
+        if args.custom_cover:
+            cover_file = gui.load_file(args.input_file)
+            if cover_file == '':
+                exit(0)
+        else:
+            cover_file = ''
+        Thread(target=KindleButlerWorker.main_thread, args=(None, args.input_file, cover_file, gui)).start()
         gui.root.mainloop()

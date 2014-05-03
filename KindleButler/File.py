@@ -46,12 +46,18 @@ class MOBIFile:
         if ident != b'BOOKMOBI':
             raise OSError('The specified file is not E-Book!')
 
-    def save_file(self):
+    def save_file(self, cover):
         if self.kindle.need_cover:
-            try:
-                ready_cover = self.get_cover_image()
-            except:
-                raise OSError('Failed to extract cover!')
+            if cover != '':
+                try:
+                    ready_cover = Image.open(cover)
+                except:
+                    raise OSError('Failed to load custom cover!')
+            else:
+                try:
+                    ready_cover = self.get_cover_image()
+                except:
+                    raise OSError('Failed to extract cover!')
             ready_cover.save(os.path.join(self.kindle.path, 'system', 'thumbnails', 'thumbnail_' + self.asin +
                                                                                     '_EBOK_portrait.jpg'), 'JPEG')
         try:
