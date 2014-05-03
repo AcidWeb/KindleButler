@@ -33,7 +33,7 @@ class Kindle:
                 if os.path.isdir(os.path.join(drive[1], 'system')) and \
                         os.path.isdir(os.path.join(drive[1], 'documents')):
                     return drive[1]
-        raise OSError('Kindle not found!')
+        raise OSError('Not found any connected Kindle!')
 
     def check_thumbnails(self):
         if os.path.isdir(os.path.join(self.path, 'system', 'thumbnails')):
