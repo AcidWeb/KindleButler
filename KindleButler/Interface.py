@@ -19,11 +19,14 @@ __license__ = 'GPL-3'
 __copyright__ = '2014, Pawel Jastrzebski <pawelj@vulturis.eu>'
 
 import os
-from psutil import disk_partitions, disk_usage
+from subprocess import STDOUT, PIPE
+from psutil import disk_partitions, disk_usage, Popen
 
 
 class Kindle:
-    def __init__(self):
+    def __init__(self, config):
+        self.config = config
+        self.ssh = False
         self.path = self.find_device()
         self.need_cover = self.check_thumbnails()
 
@@ -33,12 +36,38 @@ class Kindle:
                 if os.path.isdir(os.path.join(drive[1], 'system')) and \
                         os.path.isdir(os.path.join(drive[1], 'documents')):
                     return drive[1]
-        raise OSError('Not found any connected Kindle!')
+        if self.config['GENERAL']['SSHEnabled']:
+            ssh = Popen('"' + self.config['SSH']['PLinkPath'] + '" root@' + self.config['SSH']['KindleIP']
+                        + ' whoami', stdout=PIPE, stderr=STDOUT, shell=True)
+            ssh_check = ssh.wait()
+            if ssh_check == 0:
+                self.ssh = True
+                return self.config['SSH']['KindleIP']
+            else:
+                raise OSError('Can\'t connect to Kindle!')
+        else:
+            raise OSError('Not found any connected Kindle!')
 
     def check_thumbnails(self):
-        if os.path.isdir(os.path.join(self.path, 'system', 'thumbnails')):
-            return True
-        return False
+        if self.ssh:
+            ssh = Popen('"' + self.config['SSH']['PLinkPath'] + '" root@' + self.config['SSH']['KindleIP'] +
+                        ' "if test -d /mnt/us/system/thumbnails; then echo "True"; fi"',
+                        stdout=PIPE, stderr=STDOUT, shell=True)
+            for line in ssh.stdout:
+                if line.decode('utf-8').rstrip() == 'True':
+                    return True
+                else:
+                    return False
+        else:
+            if os.path.isdir(os.path.join(self.path, 'system', 'thumbnails')):
+                return True
+            return False
 
     def get_free_space(self):
-        return disk_usage(self.path)[2]
+        if self.ssh:
+            ssh = Popen('"' + self.config['SSH']['PLinkPath'] + '" root@' + self.config['SSH']['KindleIP'] +
+                        ' "df /mnt/us | awk \'{ print $4 }\' | tail -n 1"', stdout=PIPE, stderr=STDOUT, shell=True)
+            for line in ssh.stdout:
+                return int(line.decode('utf-8').rstrip()*1024)
+        else:
+            return disk_usage(self.path)[2]

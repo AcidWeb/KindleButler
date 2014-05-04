@@ -22,6 +22,7 @@ __copyright__ = '2014, Pawel Jastrzebski <pawelj@vulturis.eu>'
 import os
 import sys
 import argparse
+import configparser
 from tkinter import Tk, ttk, filedialog
 from threading import Thread
 from KindleButler import Interface
@@ -54,10 +55,10 @@ class KindleButlerGUI:
 
 
 class KindleButlerWorker:
-    def __init__(self, input_file, cover, ui):
+    def __init__(self, input_file, cover, ui, config):
         try:
-            kindle = Interface.Kindle()
-            file = File.MOBIFile(input_file, kindle, ui.pbar)
+            kindle = Interface.Kindle(config)
+            file = File.MOBIFile(input_file, kindle, config, ui.pbar)
             file.save_file(cover)
             ui.root.quit()
         except OSError as e:
@@ -79,6 +80,8 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--cover', dest='custom_cover', action='store_true')
     parser.add_argument('input_file', type=str)
     args = parser.parse_args()
+    configFile = configparser.ConfigParser()
+    configFile.read('KindleButler.ini')
     if args.input_file != '':
         gui = KindleButlerGUI()
         if args.custom_cover:
@@ -87,5 +90,5 @@ if __name__ == '__main__':
                 exit(0)
         else:
             cover_file = ''
-        Thread(target=KindleButlerWorker, args=(args.input_file, cover_file, gui)).start()
+        Thread(target=KindleButlerWorker, args=(args.input_file, cover_file, gui, configFile)).start()
         gui.root.mainloop()

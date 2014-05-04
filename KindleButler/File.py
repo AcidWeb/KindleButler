@@ -23,11 +23,15 @@ from imghdr import what
 from io import BytesIO
 from PIL import Image
 from uuid import uuid4
+from tempfile import gettempdir
+from subprocess import STDOUT, PIPE
+from psutil import Popen
 from . import MobiProcessing
 
 
 class MOBIFile:
-    def __init__(self, path, kindle, progressbar):
+    def __init__(self, path, kindle, config, progressbar):
+        self.config = config
         self.path = path
         self.check_file()
         self.kindle = kindle
@@ -60,8 +64,19 @@ class MOBIFile:
                     ready_cover = self.get_cover_image()
                 except:
                     raise OSError('Failed to extract cover!')
-            ready_cover.save(os.path.join(self.kindle.path, 'system', 'thumbnails', 'thumbnail_' + self.asin +
-                                                                                    '_EBOK_portrait.jpg'), 'JPEG')
+            if self.kindle.ssh:
+                tmp_cover = os.path.join(gettempdir(), 'KindleButlerCover')
+                ready_cover.save(tmp_cover, 'JPEG')
+                ssh = Popen('"' + self.config['SSH']['PSCPPath'] + '" "' + tmp_cover + '" root@' + self.kindle.path +
+                            ':/mnt/us/system/thumbnails/thumbnail_' + self.asin + '_EBOK_portrait.jpg',
+                            stdout=PIPE, stderr=STDOUT, shell=True)
+                ssh_check = ssh.wait()
+                if ssh_check != 0:
+                    raise OSError('Failed to upload cover!')
+                os.remove(tmp_cover)
+            else:
+                ready_cover.save(os.path.join(self.kindle.path, 'system',
+                                              'thumbnails', 'thumbnail_' + self.asin + '_EBOK_portrait.jpg'), 'JPEG')
         try:
             # noinspection PyArgumentList
             ready_file = MobiProcessing.DualMobiMetaFix(self.path, bytes(self.asin, 'UTF-8'))
@@ -69,15 +84,33 @@ class MOBIFile:
             raise OSError('E-Book modification failed!')
         ready_file, source_size = ready_file.get_result()
         if source_size < self.kindle.get_free_space():
-            saved = 0
-            target = open(os.path.join(self.kindle.path, 'documents', os.path.basename(self.path)), 'wb')
-            while True:
-                chunk = ready_file.read(32768)
-                if not chunk:
-                    break
-                target.write(chunk)
-                saved += len(chunk)
-                self.progressbar['value'] = int((saved/source_size)*100)
+            if self.kindle.ssh:
+                tmp_book = os.path.join(gettempdir(), os.path.basename(self.path))
+                open(tmp_book, 'wb').write(ready_file.getvalue())
+                ssh = Popen('"' + self.config['SSH']['PSCPPath'] + '" "' + tmp_book + '" root@' + self.kindle.path +
+                            ':/mnt/us/documents/', stdout=PIPE, stderr=STDOUT, shell=True)
+                for line in ssh.stdout:
+                    for inside_line in line.split(b'\r'):
+                        if b'|' in inside_line:
+                            inside_line = inside_line.decode('utf-8').split(' | ')[-1].rstrip()[:-1]
+                            self.progressbar['value'] = int(inside_line)
+                ssh_check = ssh.wait()
+                os.remove(tmp_book)
+                if ssh_check != 0:
+                    raise OSError('Failed to upload E-Book!')
+                Popen('"' + self.config['SSH']['PLinkPath'] + '" root@' + self.kindle.path +
+                      ' "dbus-send --system /default com.lab126.powerd.resuming int32:1"',
+                      stdout=PIPE, stderr=STDOUT, shell=True)
+            else:
+                saved = 0
+                target = open(os.path.join(self.kindle.path, 'documents', os.path.basename(self.path)), 'wb')
+                while True:
+                    chunk = ready_file.read(32768)
+                    if not chunk:
+                        break
+                    target.write(chunk)
+                    saved += len(chunk)
+                    self.progressbar['value'] = int((saved/source_size)*100)
         else:
             raise OSError('Not enough space on target device!')
 
