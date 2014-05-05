@@ -26,17 +26,18 @@ from uuid import uuid4
 from tempfile import gettempdir
 from subprocess import STDOUT, PIPE
 from psutil import Popen
-from . import MobiProcessing
+from . import DualMetaFix
+from . import KindleUnpack
 
 
 class MOBIFile:
     def __init__(self, path, kindle, config, progressbar):
         self.config = config
         self.path = path
-        self.check_file()
         self.kindle = kindle
         self.asin = str(uuid4())
         self.progressbar = progressbar
+        self.check_file()
 
     def check_file(self):
         if not os.path.isfile(self.path):
@@ -79,10 +80,10 @@ class MOBIFile:
                                               'thumbnails', 'thumbnail_' + self.asin + '_EBOK_portrait.jpg'), 'JPEG')
         try:
             # noinspection PyArgumentList
-            ready_file = MobiProcessing.DualMobiMetaFix(self.path, bytes(self.asin, 'UTF-8'))
+            ready_file = DualMetaFix.DualMobiMetaFix(self.path, bytes(self.asin, 'UTF-8'))
         except:
             raise OSError('E-Book modification failed!')
-        ready_file, source_size = ready_file.get_result()
+        ready_file, source_size = ready_file.getresult()
         if source_size < self.kindle.get_free_space():
             if self.kindle.ssh:
                 tmp_book = os.path.join(gettempdir(), os.path.basename(self.path))
@@ -115,13 +116,35 @@ class MOBIFile:
             raise OSError('Not enough space on target device!')
 
     def get_cover_image(self):
-        section = MobiProcessing.Sectionizer(self.path)
-        mhlst = [MobiProcessing.MobiHeader(section, 0)]
+        section = KindleUnpack.Sectionizer(self.path)
+        mhlst = [KindleUnpack.MobiHeader(section, 0)]
         mh = mhlst[0]
+        metadata = mh.getmetadata()
+        coverid = int(metadata['CoverOffset'][0])
         beg = mh.firstresource
         end = section.num_sections
+        imgnames = []
         for i in range(beg, end):
             data = section.load_section(i)
+            tmptype = data[0:4]
+            if tmptype in ["FLIS", "FCIS", "FDST", "DATP"]:
+                imgnames.append(None)
+                continue
+            elif tmptype == "SRCS":
+                imgnames.append(None)
+                continue
+            elif tmptype == "CMET":
+                imgnames.append(None)
+                continue
+            elif tmptype == "FONT":
+                imgnames.append(None)
+                continue
+            elif tmptype == "RESC":
+                imgnames.append(None)
+                continue
+            if data == chr(0xe9) + chr(0x8e) + "\r\n":
+                imgnames.append(None)
+                continue
             imgtype = what(None, data)
             if imgtype is None and data[0:2] == b'\xFF\xD8':
                 last = len(data)
@@ -129,8 +152,13 @@ class MOBIFile:
                     last -= 1
                 if data[last-2:last] == b'\xFF\xD9':
                     imgtype = "jpeg"
-            if imgtype is not None:
+            if imgtype is None:
+                imgnames.append(None)
+            else:
+                imgnames.append(i)
+            if len(imgnames)-1 == coverid:
                 cover = Image.open(BytesIO(data))
                 cover.thumbnail((217, 330), Image.ANTIALIAS)
                 cover = cover.convert('L')
                 return cover
+        raise OSError
