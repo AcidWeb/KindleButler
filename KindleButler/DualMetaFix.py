@@ -140,8 +140,6 @@ class DualMobiMetaFix:
     def __init__(self, infile, asin):
         self.datain = open(infile, 'rb').read()
         self.datain_rec0 = readsection(self.datain, 0)
-        # noinspection PyArgumentList
-        self.asin = asin
 
         # in the first mobi header
         # add 501 to "EBOK", add 113 as asin, add 504 as asin
@@ -150,8 +148,8 @@ class DualMobiMetaFix:
         rec0 = del_exth(rec0, 113)
         rec0 = del_exth(rec0, 504)
         rec0 = add_exth(rec0, 501, b'EBOK')
-        rec0 = add_exth(rec0, 113, self.asin)
-        rec0 = add_exth(rec0, 504, self.asin)
+        rec0 = add_exth(rec0, 113, asin)
+        rec0 = add_exth(rec0, 504, asin)
         self.datain = replacesection(self.datain, 0, rec0)
 
         ver = getint(self.datain_rec0, mobi_version)
@@ -179,8 +177,8 @@ class DualMobiMetaFix:
         rec0 = del_exth(rec0, 113)
         rec0 = del_exth(rec0, 504)
         rec0 = add_exth(rec0, 501, b'EBOK')
-        rec0 = add_exth(rec0, 113, self.asin)
-        rec0 = add_exth(rec0, 504, self.asin)
+        rec0 = add_exth(rec0, 113, asin)
+        rec0 = add_exth(rec0, 504, asin)
         self.datain = replacesection(self.datain, datain_kf8, rec0)
 
     def getresult(self):
