@@ -78,6 +78,7 @@ class KindleButlerWorker:
 
 
 if __name__ == '__main__':
+    # Freezing workarounds
     if getattr(sys, 'frozen', False):
         class FakeSTD(object):
             def write(self, string):
@@ -87,13 +88,19 @@ if __name__ == '__main__':
                 pass
         sys.stdout = FakeSTD()
         sys.stderr = FakeSTD()
+    if sys.platform.startswith('win'):
+        if getattr(sys, 'frozen', False):
+            os.chdir(os.path.dirname(os.path.abspath(sys.executable)))
+        else:
+            os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--cover', dest='custom_cover', action='store_true')
     parser.add_argument('input_file', type=str)
     args = parser.parse_args()
     configFile = configparser.ConfigParser()
-    configFile.read('KindleButler.ini')
-    if args.input_file != '':
+    configFile.read(['KindleButler.ini', os.path.expanduser('~/.KindleButler')])
+    if args.input_file != '' and len(configFile.sections()) > 0:
         gui = KindleButlerGUI()
         if args.custom_cover:
             cover_file = gui.load_file(args.input_file)

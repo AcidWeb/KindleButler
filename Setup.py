@@ -25,7 +25,7 @@ if platform == "win32":
                                 icon="Assets/KindleButler.ico",
                                 compress=False)])
 else:
-    print('This application work only on Windows.')
+    print('This script create only Windows releases.')
     exit()
 
 #noinspection PyUnboundLocalVariable

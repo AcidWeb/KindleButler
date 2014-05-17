@@ -32,7 +32,7 @@ class Kindle:
 
     def find_device(self):
         for drive in disk_partitions(False):
-            if 'removable' in drive[3]:
+            if 'removable' in drive[3] or 'vfat' in drive[2] or 'msdos' in drive[2]:
                 if os.path.isdir(os.path.join(drive[1], 'system')) and \
                         os.path.isdir(os.path.join(drive[1], 'documents')):
                     return drive[1]
