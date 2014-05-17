@@ -31,13 +31,16 @@ from KindleButler import File
 
 class KindleButlerGUI:
     def __init__(self):
+        self.allow_close = False
         self.root, self.pbar, self.label = self.draw_gui()
 
     def draw_gui(self):
         main = Tk()
+        main.protocol('WM_DELETE_WINDOW', self.close)
         main.title('KindleButler ' + __version__)
         main.resizable(0, 0)
         main.wm_attributes('-toolwindow', 1)
+        main.wm_attributes("-topmost", 1)
         x = (main.winfo_screenwidth() - main.winfo_reqwidth()) / 2
         y = (main.winfo_screenheight() - main.winfo_reqheight()) / 2
         main.geometry('+%d+%d' % (x, y))
@@ -53,6 +56,10 @@ class KindleButlerGUI:
                                            filetypes=(('Image files', '*.jpg;*.jpeg;*.png;*.gif'),))
         return fname
 
+    def close(self):
+        if self.allow_close:
+            self.root.destroy()
+
 
 class KindleButlerWorker:
     def __init__(self, input_file, cover, ui, config):
@@ -65,6 +72,7 @@ class KindleButlerWorker:
                 kindle.ssh.close()
             ui.root.quit()
         except OSError as e:
+            ui.allow_close = True
             ui.label.grid(row=1)
             ui.label['text'] = e
 

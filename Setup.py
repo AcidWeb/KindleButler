@@ -34,7 +34,7 @@ setup(
     version=VERSION,
     author="Pawel Jastrzebski",
     author_email="pawelj@vulturis.eu",
-    description="The tool that allows to easily send files to Kindle.",
+    description="KindleButler",
     license="GNU General Public License (GPL-3)",
     url="https://github.com/AcidWeb/KindleButler/",
     **extra_options
