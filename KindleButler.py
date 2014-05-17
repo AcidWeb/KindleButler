@@ -60,6 +60,9 @@ class KindleButlerWorker:
             kindle = Interface.Kindle(config)
             file = File.MOBIFile(input_file, kindle, config, ui.pbar)
             file.save_file(cover)
+            if kindle.ssh:
+                file.sftp.close()
+                kindle.ssh.close()
             ui.root.quit()
         except OSError as e:
             ui.label.grid(row=1)

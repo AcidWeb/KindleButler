@@ -24,8 +24,6 @@ from io import BytesIO
 from PIL import Image
 from uuid import uuid4
 from tempfile import gettempdir
-from subprocess import STDOUT, PIPE
-from psutil import Popen
 from . import DualMetaFix
 from . import KindleUnpack
 
@@ -38,6 +36,11 @@ class MOBIFile:
         self.asin = str(uuid4())
         self.progressbar = progressbar
         self.check_file()
+        if kindle.ssh:
+            self.sftp = kindle.ssh.open_sftp()
+
+    def sftp_callback(self, transferred, totalsize):
+        self.progressbar['value'] = int((transferred/totalsize)*100)
 
     def check_file(self):
         if not os.path.isfile(self.path):
@@ -68,13 +71,11 @@ class MOBIFile:
             if self.kindle.ssh:
                 tmp_cover = os.path.join(gettempdir(), 'KindleButlerCover')
                 ready_cover.save(tmp_cover, 'JPEG')
-                ssh = Popen('"' + self.config['SSH']['PSCPPath'] + '" "' + tmp_cover + '" root@' + self.kindle.path +
-                            ':/mnt/us/system/thumbnails/thumbnail_' + self.asin + '_EBOK_portrait.jpg',
-                            stdout=PIPE, stderr=STDOUT, shell=True)
-                ssh_check = ssh.wait()
-                if ssh_check != 0:
+                try:
+                    self.sftp.put(tmp_cover, '/mnt/us/system/thumbnails/thumbnail_' + self.asin + '_EBOK_portrait.jpg')
+                    os.remove(tmp_cover)
+                except:
                     raise OSError('Failed to upload cover!')
-                os.remove(tmp_cover)
             else:
                 ready_cover.save(os.path.join(self.kindle.path, 'system',
                                               'thumbnails', 'thumbnail_' + self.asin + '_EBOK_portrait.jpg'), 'JPEG')
@@ -88,20 +89,12 @@ class MOBIFile:
             if self.kindle.ssh:
                 tmp_book = os.path.join(gettempdir(), os.path.basename(self.path))
                 open(tmp_book, 'wb').write(ready_file.getvalue())
-                ssh = Popen('"' + self.config['SSH']['PSCPPath'] + '" "' + tmp_book + '" root@' + self.kindle.path +
-                            ':/mnt/us/documents/', stdout=PIPE, stderr=STDOUT, shell=True)
-                for line in ssh.stdout:
-                    for inside_line in line.split(b'\r'):
-                        if b'|' in inside_line:
-                            inside_line = inside_line.decode('utf-8').split(' | ')[-1].rstrip()[:-1]
-                            self.progressbar['value'] = int(inside_line)
-                ssh_check = ssh.wait()
-                os.remove(tmp_book)
-                if ssh_check != 0:
+                try:
+                    self.sftp.put(tmp_book, '/mnt/us/documents/' + os.path.basename(self.path), self.sftp_callback)
+                    os.remove(tmp_book)
+                    self.kindle.ssh.exec_command('dbus-send --system /default com.lab126.powerd.resuming int32:1')
+                except:
                     raise OSError('Failed to upload E-Book!')
-                Popen('"' + self.config['SSH']['PLinkPath'] + '" root@' + self.kindle.path +
-                      ' "dbus-send --system /default com.lab126.powerd.resuming int32:1"',
-                      stdout=PIPE, stderr=STDOUT, shell=True)
             else:
                 saved = 0
                 target = open(os.path.join(self.kindle.path, 'documents', os.path.basename(self.path)), 'wb')
