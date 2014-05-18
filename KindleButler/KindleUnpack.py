@@ -201,12 +201,13 @@ class MobiHeader:
         self.crypto_type, = struct.unpack_from('>H', self.header, 0xC)
 
         # Start sector for additional files such as images, fonts, resources, etc
-        self.firstresource, = struct.unpack_from('>L', self.header, 0x6C)
-        self.firstnontext, = struct.unpack_from('>L', self.header, 0x50)
-        if self.firstresource != 0xffffffff:
-            self.firstresource += self.start
-        if self.firstnontext != 0xffffffff:
-            self.firstnontext += self.start
+        # Can be missing so fall back to default set previously
+        ofst, = struct.unpack_from('>L', self.header, 0x6C)
+        if ofst != 0xffffffff:
+            self.firstresource = ofst + self.start
+        ofst, = struct.unpack_from('>L', self.header, 0x50)
+        if ofst != 0xffffffff:
+            self.firstnontext = ofst + self.start
 
         if self.version < 8:
             # Dictionary metaOrthIndex
