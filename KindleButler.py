@@ -64,6 +64,7 @@ class KindleButlerGUI:
 class KindleButlerWorker:
     def __init__(self, input_file, cover, ui, config):
         try:
+            self.check_config(config)
             kindle = Interface.Kindle(config)
             file = File.MOBIFile(input_file, kindle, config, ui.pbar)
             file.save_file(cover)
@@ -75,6 +76,35 @@ class KindleButlerWorker:
             ui.allow_close = True
             ui.label.grid(row=1)
             ui.label['text'] = e
+
+    def check_config(self, config):
+        error = False
+        if len(config.sections()) != 2:
+                error = True
+        try:
+            if config['GENERAL']['SSHEnabled'] != 'True' and config['GENERAL']['SSHEnabled'] != 'False':
+                error = True
+            else:
+                if not os.path.isfile(config['SSH']['PrivateKeyPath']):
+                    error = True
+                if not self.validate_ip(config['SSH']['KindleIP']):
+                    error = True
+        except KeyError:
+            error = True
+        if error:
+            raise OSError('Failed to parse config!')
+
+    def validate_ip(self, s):
+        a = s.split('.')
+        if len(a) != 4:
+            return False
+        for x in a:
+            if not x.isdigit():
+                return False
+            i = int(x)
+            if i < 0 or i > 255:
+                return False
+        return True
 
 
 if __name__ == '__main__':
@@ -95,12 +125,12 @@ if __name__ == '__main__':
             os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--cover', dest='custom_cover', action='store_true')
-    parser.add_argument('input_file', type=str)
+    parser.add_argument('-c', '--cover', dest='custom_cover', action='store_true', help='Use custom cover')
+    parser.add_argument('input_file', type=str, help='Input file')
     args = parser.parse_args()
     configFile = configparser.ConfigParser()
     configFile.read(['KindleButler.ini', os.path.expanduser('~/.KindleButler')])
-    if args.input_file != '' and len(configFile.sections()) > 0:
+    if args.input_file != '':
         gui = KindleButlerGUI()
         if args.custom_cover:
             cover_file = gui.load_file(args.input_file)

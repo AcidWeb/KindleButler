@@ -36,7 +36,7 @@ class Kindle:
                 if os.path.isdir(os.path.join(drive[1], 'system')) and \
                         os.path.isdir(os.path.join(drive[1], 'documents')):
                     return drive[1]
-        if self.config['GENERAL']['SSHEnabled']:
+        if self.config['GENERAL']['SSHEnabled'] == 'True':
             ssh = paramiko.SSHClient()
             ssh.load_system_host_keys()
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())

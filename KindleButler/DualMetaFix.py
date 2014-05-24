@@ -17,7 +17,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
-
 import struct
 from io import BytesIO
 
