@@ -8,7 +8,8 @@ Additionally it automatically handle all problems with covers and *Personal* tag
 Latest **Windows** binaries are available [here](https://github.com/AcidWeb/KindleButler/releases).
 
 ## USAGE
-On **Windows** just right click MOBI/AZW3/AZW file. All options will be there.
+On **Windows** just right click MOBI/AZW3/AZW file. All options should be there. If not - change file association.
+
 Support of other OS is experimental. **KindleButler** should work but extensive testing was not performed.
 There is no binary releases for **Linux/OSX**.
 
@@ -17,6 +18,7 @@ To upload book over Wi-Fi Kindle needs to be jailbroken and have fully configure
 User should be able to login using RSA key. Additionally **KindleButler** config file must be edited.
 
 **Windows:** *KindleButler.ini* in program directory.
+
 **Linux/OSX:** *~/.KindleButler*
 
 ### DEPENDENCIES:

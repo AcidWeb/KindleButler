@@ -84,7 +84,7 @@ class KindleButlerWorker:
         try:
             if config['GENERAL']['SSHEnabled'] != 'True' and config['GENERAL']['SSHEnabled'] != 'False':
                 error = True
-            else:
+            elif config['GENERAL']['SSHEnabled'] == 'True':
                 if not os.path.isfile(config['SSH']['PrivateKeyPath']):
                     error = True
                 if not self.validate_ip(config['SSH']['KindleIP']):
