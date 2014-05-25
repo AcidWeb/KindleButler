@@ -2,7 +2,7 @@
 cx_Freeze build script for KindleButler.
 
 Usage (Windows):
-    python setup.py build
+    python setup.py py2exe
 """
 from sys import platform
 
@@ -11,19 +11,25 @@ VERSION = "0.1"
 MAIN = "KindleButler.py"
 
 if platform == "win32":
-    from cx_Freeze import setup, Executable
+    # noinspection PyUnresolvedReferences
+    import py2exe
+    from distutils.core import setup
     extra_options = dict(
-        options={"build_exe": {"optimize": 2,
-                               "include_files": ['LICENSE.txt'],
-                               "copy_dependent_files": True,
-                               "create_shared_zip": False,
-                               "append_script_to_exe": True,
-                               "replace_paths": '*='}},
-        executables=[Executable(MAIN,
-                                base="Win32GUI",
-                                targetName="KindleButler.exe",
-                                icon="Assets/KindleButler.ico",
-                                compress=False)])
+        options={'py2exe': {"bundle_files": 2,
+                            "dist_dir": "dist",
+                            "compressed": True,
+                            "optimize": 2}},
+        windows=[{"script": "KindleButler.py",
+                  "dest_base": "KindleButler",
+                  "version": VERSION,
+                  "copyright": "Pawel Jastrzebski © 2014",
+                  "legal_copyright": "GNU General Public License (GPL-3)",
+                  "product_version": VERSION,
+                  "product_name": "KindleButler",
+                  "file_description": "KindleButler",
+                  "icon_resources": [(1, "Assets\KindleButler.ico")]}],
+        zipfile=None,
+        data_files=None)
 else:
     print('This script create only Windows releases.')
     exit()
