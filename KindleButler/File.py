@@ -79,23 +79,23 @@ class MOBIFile:
             else:
                 ready_cover.save(os.path.join(self.kindle.path, 'system',
                                               'thumbnails', 'thumbnail_' + self.asin + '_EBOK_portrait.jpg'), 'JPEG')
+        tmp_book = os.path.join(gettempdir(), 'KindleButlerTmpFile')
         try:
             # noinspection PyArgumentList
-            ready_file = DualMetaFix.DualMobiMetaFix(self.path, bytes(self.asin, 'UTF-8'))
+            DualMetaFix.DualMobiMetaFix(self.path, tmp_book, bytes(self.asin, 'UTF-8'))
         except:
+            os.remove(tmp_book)
             raise OSError('E-Book modification failed!')
-        ready_file, source_size = ready_file.getresult()
+        source_size = os.path.getsize(tmp_book)
         if source_size < self.kindle.get_free_space():
             if self.kindle.ssh:
-                tmp_book = os.path.join(gettempdir(), os.path.basename(self.path))
-                open(tmp_book, 'wb').write(ready_file.getvalue())
                 try:
                     self.sftp.put(tmp_book, '/mnt/us/documents/' + os.path.basename(self.path), self.sftp_callback)
-                    os.remove(tmp_book)
                     self.kindle.ssh.exec_command('dbus-send --system /default com.lab126.powerd.resuming int32:1')
                 except:
                     raise OSError('Failed to upload E-Book!')
             else:
+                ready_file = open(tmp_book, 'r+b')
                 saved = 0
                 target = open(os.path.join(self.kindle.path, 'documents', os.path.basename(self.path)), 'wb')
                 while True:
@@ -105,6 +105,8 @@ class MOBIFile:
                     target.write(chunk)
                     saved += len(chunk)
                     self.progressbar['value'] = int((saved/source_size)*100)
+                ready_file.close()
+            os.remove(tmp_book)
         else:
             raise OSError('Not enough space on target device!')
 

@@ -16,9 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
 import struct
-from io import BytesIO
+import mmap
+import shutil
 
 
 class DualMetaFixException(Exception):
@@ -71,9 +71,7 @@ def replacesection(datain, secno, secdata):
     seclen = secend - secstart
     if len(secdata) != seclen:
         raise DualMetaFixException('section length change in replacesection')
-    datalst = [datain[0:secstart], secdata, datain[secend:]]
-    dataout = b''.join(datalst)
-    return dataout
+    datain[secstart:secstart+seclen] = secdata
 
 
 def get_exth_params(rec0):
@@ -136,8 +134,10 @@ def del_exth(rec0, exth_num):
 
 
 class DualMobiMetaFix:
-    def __init__(self, infile, asin):
-        self.datain = open(infile, 'rb').read()
+    def __init__(self, infile, outfile, asin):
+        shutil.copyfile(infile, outfile)
+        f = open(outfile, "r+b")
+        self.datain = mmap.mmap(f.fileno(), 0)
         self.datain_rec0 = readsection(self.datain, 0)
 
         # in the first mobi header
@@ -149,7 +149,7 @@ class DualMobiMetaFix:
         rec0 = add_exth(rec0, 501, b'EBOK')
         rec0 = add_exth(rec0, 113, asin)
         rec0 = add_exth(rec0, 504, asin)
-        self.datain = replacesection(self.datain, 0, rec0)
+        replacesection(self.datain, 0, rec0)
 
         ver = getint(self.datain_rec0, mobi_version)
         self.combo = (ver != 8)
@@ -178,8 +178,7 @@ class DualMobiMetaFix:
         rec0 = add_exth(rec0, 501, b'EBOK')
         rec0 = add_exth(rec0, 113, asin)
         rec0 = add_exth(rec0, 504, asin)
-        self.datain = replacesection(self.datain, datain_kf8, rec0)
+        replacesection(self.datain, datain_kf8, rec0)
 
-    def getresult(self):
-        # noinspection PyArgumentList
-        return BytesIO(bytes(self.datain)), sys.getsizeof(bytes(self.datain))
+        self.datain.flush()
+        self.datain.close()

@@ -36,5 +36,5 @@ Copyright (c) 2014 Pawel Jastrzebski
 **KindleButler** is released under GNU General Public License. See LICENSE.txt for further details.
 
 The application relies and includes the following scripts:
- - `DualMetaFix` script by Charles **K. Hendricks**. Released with GPL-3 License.
- - `KindleUnpack` script by Charles **M. Hannum, P. Durrant, K. Hendricks, S. Siebert, fandrieu, DiapDealer, nickredding**. Released with GPL-3 License.
+ - `DualMetaFix` script by **K. Hendricks**. Released with GPL-3 License.
+ - `KindleUnpack` script by **M. Hannum, P. Durrant, K. Hendricks, S. Siebert, fandrieu, DiapDealer, nickredding**. Released with GPL-3 License.
