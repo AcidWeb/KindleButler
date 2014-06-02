@@ -87,6 +87,7 @@ class MOBIFile:
             os.remove(tmp_book)
             raise OSError('E-Book modification failed!')
         source_size = os.path.getsize(tmp_book)
+        self.kindle.cleanup()
         if source_size < self.kindle.get_free_space():
             if self.kindle.ssh:
                 try:

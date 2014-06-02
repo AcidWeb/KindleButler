@@ -20,6 +20,7 @@ __copyright__ = '2014, Pawel Jastrzebski <pawelj@vulturis.eu>'
 
 import os
 import paramiko
+import glob
 from psutil import disk_partitions, disk_usage
 
 
@@ -70,3 +71,10 @@ class Kindle:
                 return int(line.rstrip())*1024
         else:
             return disk_usage(self.path)[2]
+
+    def cleanup(self):
+        if self.ssh:
+            self.ssh.exec_command("rm -rf /mnt/us/documents/.fuse_hidden*")
+        else:
+            for fl in glob.glob(os.path.join(self.path, 'documents', '.fuse_hidden*')):
+                os.remove(fl)
