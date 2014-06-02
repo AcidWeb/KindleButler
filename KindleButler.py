@@ -39,7 +39,8 @@ class KindleButlerGUI:
         main.protocol('WM_DELETE_WINDOW', self.close)
         main.title('KindleButler ' + __version__)
         main.resizable(0, 0)
-        main.wm_attributes('-toolwindow', 1)
+        if sys.platform.startswith('win'):
+            main.wm_attributes('-toolwindow', 1)
         main.wm_attributes("-topmost", 1)
         x = (main.winfo_screenwidth() - main.winfo_reqwidth()) / 2
         y = (main.winfo_screenheight() - main.winfo_reqheight()) / 2
