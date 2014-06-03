@@ -31,6 +31,11 @@ User should be able to login using RSA key. Additionally **KindleButler** config
 ####0.1
 * Initial release
 
+####0.1.1
+* Added additional Kindle cleanup before upload
+* Fixed processing files bigger than 100MB
+* Fixed crash caused by PNG files that use RGBA palette
+
 ## COPYRIGHT
 Copyright (c) 2014 Pawel Jastrzebski
 **KindleButler** is released under GNU General Public License. See LICENSE.txt for further details.

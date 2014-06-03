@@ -1,5 +1,5 @@
 ﻿#define MyAppName "KindleButler"
-#define MyAppVersion "0.1"
+#define MyAppVersion "0.1.1"
 #define MyAppPublisher "Paweł Jastrzębski"
 #define MyAppURL "https://github.com/AcidWeb/KindleButler"
 #define MyAppExeName "KindleButler.exe"
@@ -30,7 +30,7 @@ SignTool=SignTool /d $q{#MyAppName}$q /du $q{#MyAppURL}$q $f
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Files]
-Source: "dist\tcl\*"; DestDir: "{app}\tcl\"; Flags: ignoreversion;
+Source: "dist\tcl\*"; DestDir: "{app}\tcl\"; Flags: ignoreversion recursesubdirs;
 Source: "dist\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion;
 Source: "dist\*.dll"; DestDir: "{app}"; Flags: ignoreversion;
 Source: "LICENSE.txt"; DestDir: "{app}"; Flags: ignoreversion

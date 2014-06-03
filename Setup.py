@@ -7,13 +7,15 @@ Usage (Windows):
 from sys import platform
 
 NAME = "KindleButler"
-VERSION = "0.1"
+VERSION = "0.1.1"
 MAIN = "KindleButler.py"
 
 if platform == "win32":
     # noinspection PyUnresolvedReferences
     import py2exe
     from distutils.core import setup
+    additional_files = [('', ['LICENSE.txt',
+                              'KindleButler.ini'])]
     extra_options = dict(
         options={'py2exe': {"bundle_files": 2,
                             "dist_dir": "dist",
@@ -29,7 +31,7 @@ if platform == "win32":
                   "file_description": "KindleButler",
                   "icon_resources": [(1, "Assets\KindleButler.ico")]}],
         zipfile=None,
-        data_files=None)
+        data_files=additional_files)
 else:
     print('This script create only Windows releases.')
     exit()
