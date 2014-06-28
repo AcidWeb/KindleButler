@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2014 Pawel Jastrzebski <pawelj@vulturis.eu>
+# Copyright (c) 2014 Pawel Jastrzebski <pawelj@iosphe.re>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
 
 __version__ = '0.1.1'
 __license__ = 'GPL-3'
-__copyright__ = '2014, Pawel Jastrzebski <pawelj@vulturis.eu>'
+__copyright__ = '2014, Pawel Jastrzebski <pawelj@iosphe.re>'
 
 import os
 import sys

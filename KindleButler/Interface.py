@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2014 Pawel Jastrzebski <pawelj@vulturis.eu>
+# Copyright (c) 2014 Pawel Jastrzebski <pawelj@iosphe.re>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 __license__ = 'GPL-3'
-__copyright__ = '2014, Pawel Jastrzebski <pawelj@vulturis.eu>'
+__copyright__ = '2014, Pawel Jastrzebski <pawelj@iosphe.re>'
 
 import os
 import paramiko

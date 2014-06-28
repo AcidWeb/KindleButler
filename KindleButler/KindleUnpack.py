@@ -3,7 +3,7 @@
 # Based on initial version Copyright © 2009 Charles M. Hannum root@ihack.net
 # Extensions / Improvements Copyright © 2009-2012: P. Durrant, K.Hendricks,
 # S. Siebert, fandrieu, DiapDealer, nickredding, and bug fixes from many others.
-# Stripped down for KindleButler Copyright (C) 2014 Pawel Jastrzebski <pawelj@vulturis.eu>
+# Stripped down for KindleButler Copyright (C) 2014 Pawel Jastrzebski <pawelj@iosphe.re>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

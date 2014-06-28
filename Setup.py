@@ -41,7 +41,7 @@ setup(
     name=NAME,
     version=VERSION,
     author="Pawel Jastrzebski",
-    author_email="pawelj@vulturis.eu",
+    author_email="pawelj@iosphe.re",
     description="KindleButler",
     license="GNU General Public License (GPL-3)",
     url="https://github.com/AcidWeb/KindleButler/",
