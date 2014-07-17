@@ -19,6 +19,8 @@ __license__ = 'GPL-3'
 __copyright__ = '2014, Pawel Jastrzebski <pawelj@iosphe.re>'
 
 import os
+import random
+import string
 from imghdr import what
 from io import BytesIO
 from PIL import Image
@@ -41,6 +43,9 @@ class MOBIFile:
 
     def sftp_callback(self, transferred, totalsize):
         self.progressbar['value'] = int((transferred/totalsize)*100)
+
+    def id_generator(self):
+        return ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(5))
 
     def check_file(self):
         if not os.path.isfile(self.path):
@@ -69,7 +74,7 @@ class MOBIFile:
                 except:
                     raise OSError('Failed to extract cover!')
             if self.kindle.ssh:
-                tmp_cover = os.path.join(gettempdir(), 'KindleButlerCover')
+                tmp_cover = os.path.join(gettempdir(), 'KindleButlerCover-' + self.id_generator())
                 ready_cover.save(tmp_cover, 'JPEG')
                 try:
                     self.sftp.put(tmp_cover, '/mnt/us/system/thumbnails/thumbnail_' + self.asin + '_EBOK_portrait.jpg')
@@ -79,7 +84,7 @@ class MOBIFile:
             else:
                 ready_cover.save(os.path.join(self.kindle.path, 'system',
                                               'thumbnails', 'thumbnail_' + self.asin + '_EBOK_portrait.jpg'), 'JPEG')
-        tmp_book = os.path.join(gettempdir(), 'KindleButlerTmpFile')
+        tmp_book = os.path.join(gettempdir(), 'KindleButlerTmpFile-' + self.id_generator())
         try:
             # noinspection PyArgumentList
             DualMetaFix.DualMobiMetaFix(self.path, tmp_book, bytes(self.asin, 'UTF-8'))
