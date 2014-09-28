@@ -23,6 +23,7 @@ User should be able to login using RSA key. Additionally **KindleButler** config
 
 ### DEPENDENCIES:
 - Python 3.3+
+- [PyQt5](http://www.riverbankcomputing.co.uk/software/pyqt/download5) 5.2.0+
 - [Pillow](http://pypi.python.org/pypi/Pillow/)
 - [Psutil](https://pypi.python.org/pypi/psutil)
 - [Paramiko](https://pypi.python.org/pypi/paramiko/)
@@ -35,6 +36,10 @@ User should be able to login using RSA key. Additionally **KindleButler** config
 * Added additional Kindle cleanup before upload
 * Fixed processing files bigger than 100MB
 * Fixed crash caused by PNG files that use RGBA palette
+
+####0.2
+* Rewritten GUI
+* Added file queuing
 
 ## COPYRIGHT
 Copyright (c) 2014 Pawel Jastrzebski

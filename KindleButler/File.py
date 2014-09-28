@@ -42,7 +42,7 @@ class MOBIFile:
             self.sftp = kindle.ssh.open_sftp()
 
     def sftp_callback(self, transferred, totalsize):
-        self.progressbar['value'] = int((transferred/totalsize)*100)
+        self.progressbar.emit(str(int((transferred/totalsize)*100)), False)
 
     def id_generator(self):
         return ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(5))
@@ -110,7 +110,7 @@ class MOBIFile:
                         break
                     target.write(chunk)
                     saved += len(chunk)
-                    self.progressbar['value'] = int((saved/source_size)*100)
+                    self.progressbar.emit(str(int((saved/source_size)*100)), False)
                 ready_file.close()
             os.remove(tmp_book)
         else:

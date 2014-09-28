@@ -1,5 +1,5 @@
 """
-cx_Freeze build script for KindleButler.
+py2exe build script for KindleButler.
 
 Usage (Windows):
     python setup.py py2exe
@@ -7,19 +7,25 @@ Usage (Windows):
 from sys import platform
 
 NAME = "KindleButler"
-VERSION = "0.1.1"
+VERSION = "0.2"
 MAIN = "KindleButler.py"
 
 if platform == "win32":
     # noinspection PyUnresolvedReferences
     import py2exe
     from distutils.core import setup
-    additional_files = [('', ['LICENSE.txt',
-                              'KindleButler.ini'])]
+    additional_files = [('platforms', ['C:\Python34\Lib\site-packages\PyQt5\plugins\platforms\qwindows.dll']),
+                        ('imageformats', ['C:\Python34\Lib\site-packages\PyQt5\plugins\imageformats\qico.dll']),
+                        ('', ['LICENSE.txt',
+                              'KindleButler.ini',
+                              'C:\Python34\Lib\site-packages\PyQt5\libEGL.dll'])]
     extra_options = dict(
-        options={'py2exe': {"bundle_files": 2,
+        options={'py2exe': {"bundle_files": 1,
+                            "dll_excludes": ["tcl85.dll", "tk85.dll"],
                             "dist_dir": "dist",
                             "compressed": True,
+                            "includes": ["sip"],
+                            "excludes": ["tkinter"],
                             "optimize": 2}},
         windows=[{"script": "KindleButler.py",
                   "dest_base": "KindleButler",

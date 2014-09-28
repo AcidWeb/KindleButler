@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-__version__ = '0.1.1'
+__version__ = '0.2'
 __license__ = 'GPL-3'
 __copyright__ = '2014, Pawel Jastrzebski <pawelj@iosphe.re>'
 
@@ -23,60 +23,138 @@ import os
 import sys
 import argparse
 import configparser
-from tkinter import Tk, ttk, filedialog
-from threading import Thread
+from PyQt5 import QtCore, QtNetwork, QtWidgets, QtGui
+from KindleButler import GUI
 from KindleButler import Interface
 from KindleButler import File
 
 
-class KindleButlerGUI:
+class QApplicationMessaging(QtWidgets.QApplication):
+    jobRequest = QtCore.pyqtSignal(bytes)
+
+    def __init__(self, argv):
+        QtWidgets.QApplication.__init__(self, argv)
+        self._key = 'KindleButler'
+        self._timeout = 1000
+        self._locked = False
+        socket = QtNetwork.QLocalSocket(self)
+        socket.connectToServer(self._key, QtCore.QIODevice.WriteOnly)
+        if not socket.waitForConnected(self._timeout):
+            self._server = QtNetwork.QLocalServer(self)
+            # noinspection PyUnresolvedReferences
+            self._server.newConnection.connect(self.handle_message)
+            self._server.listen(self._key)
+        else:
+            self._locked = True
+        socket.disconnectFromServer()
+
+    def __del__(self):
+        if not self._locked:
+            self._server.close()
+
+    def is_running(self):
+        return self._locked
+
+    def handle_message(self):
+        socket = self._server.nextPendingConnection()
+        if socket.waitForReadyRead(self._timeout):
+            self.jobRequest.emit(socket.readAll().data())
+
+    def send_message(self, message):
+        socket = QtNetwork.QLocalSocket(self)
+        socket.connectToServer(self._key, QtCore.QIODevice.WriteOnly)
+        socket.waitForConnected(self._timeout)
+        socket.write(bytes(message, 'UTF-8'))
+        socket.waitForBytesWritten(self._timeout)
+        socket.disconnectFromServer()
+
+
+class QMainWindowKindleButler(QtWidgets.QMainWindow):
+    progressBarEdit = QtCore.pyqtSignal(str, bool)
+    reduceQueue = QtCore.pyqtSignal()
+
+
+class KindleButler(GUI.Ui_MainWindow):
     def __init__(self):
-        self.allow_close = False
-        self.root, self.pbar, self.label = self.draw_gui()
+        self.setupUi(MW)
+        self.pool = QtCore.QThreadPool()
+        self.pool.setMaxThreadCount(1)
+        self.queue = -1
+        self.stop = False
+        self.error = False
 
-    def draw_gui(self):
-        main = Tk()
-        main.protocol('WM_DELETE_WINDOW', self.close)
-        main.title('KindleButler ' + __version__)
-        main.resizable(0, 0)
+        self.errorFont = QtGui.QFont()
+        self.errorFont.setPointSize(8)
+        self.errorFont.setBold(True)
+        self.errorFont.setWeight(75)
+        self.defaultFont = QtGui.QFont()
+        self.defaultFont.setPointSize(13)
+        self.defaultFont.setBold(True)
+        self.defaultFont.setWeight(75)
+
+        App.jobRequest.connect(self.handle_job)
+        MW.setWindowTitle('KindleButler ' + __version__)
+        MW.setWindowFlags(MW.windowFlags() & ~QtCore.Qt.WindowMaximizeButtonHint & ~QtCore.Qt.WindowMinimizeButtonHint)
+        MW.setWindowFlags(MW.windowFlags() | QtCore.Qt.WindowStaysOnTopHint)
+        MW.progressBarEdit.connect(self.progressbar_edit)
+        MW.reduceQueue.connect(self.reduce_queue)
+        MW.closeEvent = self.close
+        MW.show()
+        MW.raise_()
+
+    def close(self, event):
+        self.stop = True
+        if not self.queue == -1:
+            event.ignore()
+
+    def handle_job(self, message):
+        MW.raise_()
+        MW.activateWindow()
+        if type(message) is bytes:
+            message = message.decode('UTF-8').split('#####')
+        else:
+            message = message.split('#####')
+        if message[1] == 'True':
+            cover_file = self.select_cover(message[0])
+        else:
+            cover_file = ''
+        self.queue += 1
+        self.stop = False
+        worker = KindleButlerWorker(message[0], cover_file, ConfigFile)
+        self.pool.start(worker)
+
+    def select_cover(self, path):
+        # noinspection PyCallByClass,PyTypeChecker
+        fname = QtWidgets.QFileDialog.getOpenFileName(MW, 'Select cover', path, '*.jpg *.png *.gif')
         if sys.platform.startswith('win'):
-            main.wm_attributes('-toolwindow', 1)
-        main.wm_attributes("-topmost", 1)
-        x = (main.winfo_screenwidth() - main.winfo_reqwidth()) / 2
-        y = (main.winfo_screenheight() - main.winfo_reqheight()) / 2
-        main.geometry('+%d+%d' % (x, y))
-        progressbar = ttk.Progressbar(orient='horizontal', length=200, mode='determinate')
-        progressbar.grid(row=0)
-        style = ttk.Style()
-        style.configure('BW.TLabel', foreground='red')
-        label = ttk.Label(style='BW.TLabel')
-        return main, progressbar, label
-
-    def load_file(self, source):
-        fname = filedialog.askopenfilename(title='Select cover', initialdir=os.path.split(source)[0],
-                                           filetypes=(('Image files', '*.jpg;*.jpeg;*.png;*.gif'),))
+            fname = fname[0].replace('/', '\\')
         return fname
 
-    def close(self):
-        if self.allow_close:
-            self.root.destroy()
+    def progressbar_edit(self, command, error=False):
+        if command.isdigit():
+            if self.queue > 0:
+                UI.progressBar.setFormat('Queue: ' + str(self.queue))
+            else:
+                UI.progressBar.setFormat('')
+            UI.progressBar.setStyleSheet('color: rgb(0, 0, 0);')
+            UI.progressBar.setValue(int(command))
+        else:
+            if error:
+                UI.queue = -1
+                UI.stop = True
+                UI.progressBar.setFont(self.errorFont)
+                UI.progressBar.setStyleSheet('color: rgb(255, 0, 0);')
+            else:
+                UI.progressBar.setFont(self.defaultFont)
+                UI.progressBar.setStyleSheet('color: rgb(0, 0, 0);')
+            UI.progressBar.setFormat(command)
 
-
-class KindleButlerWorker:
-    def __init__(self, input_file, cover, ui, config):
-        try:
-            self.check_config(config)
-            kindle = Interface.Kindle(config)
-            file = File.MOBIFile(input_file, kindle, config, ui.pbar)
-            file.save_file(cover)
-            if kindle.ssh:
-                file.sftp.close()
-                kindle.ssh.close()
-            ui.root.quit()
-        except OSError as e:
-            ui.allow_close = True
-            ui.label.grid(row=1)
-            ui.label['text'] = e
+    def reduce_queue(self):
+        if UI.stop:
+            self.queue = -1
+            MW.progressBarEdit.emit('100', False)
+        else:
+            self.queue -= 1
 
     def check_config(self, config):
         error = False
@@ -108,8 +186,31 @@ class KindleButlerWorker:
         return True
 
 
+class KindleButlerWorker(QtCore.QRunnable):
+    def __init__(self, input_file, cover, config):
+        super(KindleButlerWorker, self).__init__()
+        self.file = input_file
+        self.cover = cover
+        self.config = config
+
+    def run(self):
+        try:
+            if not UI.stop:
+                UI.check_config(self.config)
+                kindle = Interface.Kindle(self.config, MW.progressBarEdit)
+                file = File.MOBIFile(self.file, kindle, self.config, MW.progressBarEdit)
+                file.save_file(self.cover)
+                if kindle.ssh:
+                    file.sftp.close()
+                    kindle.ssh.close()
+                MW.reduceQueue.emit()
+        except OSError as e:
+            MW.progressBarEdit.emit('0', False)
+            MW.progressBarEdit.emit(str(e), True)
+
+
 if __name__ == '__main__':
-    # Freezing workarounds
+    global App, MW, UI, Arg, ConfigFile
     if getattr(sys, 'frozen', False):
         class FakeSTD(object):
             def write(self, string):
@@ -128,16 +229,18 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--cover', dest='custom_cover', action='store_true', help='Use custom cover')
     parser.add_argument('input_file', type=str, help='Input file')
-    args = parser.parse_args()
-    configFile = configparser.ConfigParser()
-    configFile.read(['KindleButler.ini', os.path.expanduser('~/.KindleButler')])
-    if args.input_file != '':
-        gui = KindleButlerGUI()
-        if args.custom_cover:
-            cover_file = gui.load_file(args.input_file)
-            if cover_file == '':
-                exit(0)
-        else:
-            cover_file = ''
-        Thread(target=KindleButlerWorker, args=(args.input_file, cover_file, gui, configFile)).start()
-        gui.root.mainloop()
+    Arg = parser.parse_args()
+
+    ConfigFile = configparser.ConfigParser()
+    ConfigFile.read(['KindleButler.ini', os.path.expanduser('~/.KindleButler')])
+
+    App = QApplicationMessaging(sys.argv)
+    if App.is_running():
+        if Arg.input_file != '':
+            App.send_message(Arg.input_file + '#####' + str(Arg.custom_cover))
+            sys.exit(0)
+    MW = QMainWindowKindleButler()
+    UI = KindleButler()
+    if Arg.input_file != '':
+        UI.handle_job(Arg.input_file + '#####' + str(Arg.custom_cover))
+    sys.exit(App.exec_())

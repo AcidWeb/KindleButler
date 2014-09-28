@@ -25,9 +25,10 @@ from psutil import disk_partitions, disk_usage
 
 
 class Kindle:
-    def __init__(self, config):
+    def __init__(self, config, progressbar):
         self.config = config
         self.ssh = None
+        self.progressbar = progressbar
         self.path = self.find_device()
         self.need_cover = self.check_thumbnails()
 
@@ -43,7 +44,10 @@ class Kindle:
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             try:
                 key = paramiko.RSAKey.from_private_key_file(self.config['SSH']['PrivateKeyPath'])
-                ssh.connect(self.config['SSH']['KindleIP'], port=22, username='root', allow_agent=True, pkey=key)
+                self.progressbar.emit('0', False)
+                self.progressbar.emit('Connecting SSH...', False)
+                ssh.connect(self.config['SSH']['KindleIP'], timeout=5, port=22,
+                            username='root', allow_agent=True, pkey=key)
                 self.ssh = ssh
                 return ''
             except:
